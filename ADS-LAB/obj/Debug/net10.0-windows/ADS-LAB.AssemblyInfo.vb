@@ -16,7 +16,7 @@ Imports System.Reflection
 <Assembly: System.Reflection.AssemblyCompanyAttribute("ADS-LAB"),  _
  Assembly: System.Reflection.AssemblyConfigurationAttribute("Debug"),  _
  Assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0"),  _
- Assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+29b2bef219c0e987d8f5afe76f13d756d5c88d33"),  _
+ Assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7f17e265fea6110f1e6007d878c5239196276395"),  _
  Assembly: System.Reflection.AssemblyProductAttribute("ADS-LAB"),  _
  Assembly: System.Reflection.AssemblyTitleAttribute("ADS-LAB"),  _
  Assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0"),  _

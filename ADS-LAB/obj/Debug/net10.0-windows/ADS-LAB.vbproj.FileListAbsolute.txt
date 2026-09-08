@@ -30,3 +30,6 @@ C:\Users\ASUS\Documents\---\3 - 1\ADVANCE DATABASE SYSTEMS\ADS-LAB\ADS-LAB\ADS-L
 C:\Users\ASUS\Documents\---\3 - 1\ADVANCE DATABASE SYSTEMS\ADS-LAB\ADS-LAB\ADS-LAB\obj\Debug\net10.0-windows\ADS-LAB.genruntimeconfig.cache
 C:\Users\ASUS\Documents\---\3 - 1\ADVANCE DATABASE SYSTEMS\ADS-LAB\ADS-LAB\ADS-LAB\obj\Debug\net10.0-windows\ref\ADS-LAB.dll
 C:\Users\ASUS\Documents\---\3 - 1\ADVANCE DATABASE SYSTEMS\ADS-LAB\ADS-LAB\ADS-LAB\obj\Debug\net10.0-windows\ADS_LAB.AdminForm.resources
+C:\Users\ASUS\Documents\---\3 - 1\ADVANCE DATABASE SYSTEMS\ADS-LAB\ADS-LAB\ADS-LAB\obj\Debug\net10.0-windows\ADS_LAB.TeacherDashboard.resources
+C:\Users\ASUS\Documents\---\3 - 1\ADVANCE DATABASE SYSTEMS\ADS-LAB\ADS-LAB\ADS-LAB\obj\Debug\net10.0-windows\ADS-LAB.sourcelink.json
+C:\Users\ASUS\Documents\---\3 - 1\ADVANCE DATABASE SYSTEMS\ADS-LAB\ADS-LAB\ADS-LAB\obj\Debug\net10.0-windows\ADS_LAB.StudentDashboard.resources

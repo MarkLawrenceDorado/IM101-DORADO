@@ -58,12 +58,12 @@ Public Class LoginForm
                 AdminForm.Show()
             Case 2 ' Teacher
                 MessageBox.Show("Login OK — Teacher (user_id=" & userId & ")")
-                'Dim teacherForm As New TeacherForm(userId)
-                'teacherForm.Show()
+                Dim teacherForm As New TeacherDashboard(userId)
+                teacherForm.Show()
             Case 3 ' Student
                 MessageBox.Show("Login OK — Student (user_id=" & userId & ")")
-                'Dim studentForm As New StudentForm(userId)
-                'studentForm.Show()
+                Dim studentForm As New StudentDashboard(userId)
+                studentForm.Show()
             Case Else
                 MessageBox.Show("Unrecognized role.", "Error")
         End Select
