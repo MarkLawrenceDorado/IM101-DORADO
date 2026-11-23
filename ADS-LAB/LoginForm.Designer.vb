@@ -2,9 +2,8 @@
 Partial Class LoginForm
     Inherits System.Windows.Forms.Form
 
-    'Form overrides dispose to clean up the component list.
     <System.Diagnostics.DebuggerNonUserCode()>
-    Protected Overrides Sub Dispose(disposing As Boolean)
+    Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
                 components.Dispose()
@@ -14,95 +13,100 @@ Partial Class LoginForm
         End Try
     End Sub
 
-    'Required by the Windows Form Designer
     Private components As System.ComponentModel.IContainer
 
-    'NOTE: The following procedure is required by the Windows Form Designer
-    'It can be modified using the Windows Form Designer.
-    'Do not modify it using the code editor.
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        usernameLbl = New Label()
-        passwordLbl = New Label()
-        txtUsername = New TextBox()
-        txtPassword = New TextBox()
-        btnLogin = New Button()
-        loginLbl = New Label()
-        SuspendLayout()
-        ' 
-        ' usernameLbl
-        ' 
-        usernameLbl.AutoSize = True
-        usernameLbl.Location = New Point(84, 181)
-        usernameLbl.Name = "usernameLbl"
-        usernameLbl.Size = New Size(78, 20)
-        usernameLbl.TabIndex = 0
-        usernameLbl.Text = "Username:"
-        ' 
-        ' passwordLbl
-        ' 
-        passwordLbl.AutoSize = True
-        passwordLbl.Location = New Point(84, 265)
-        passwordLbl.Name = "passwordLbl"
-        passwordLbl.Size = New Size(73, 20)
-        passwordLbl.TabIndex = 1
-        passwordLbl.Text = "Password:"
-        ' 
-        ' txtUsername
-        ' 
-        txtUsername.Location = New Point(189, 174)
-        txtUsername.Name = "txtUsername"
-        txtUsername.Size = New Size(272, 27)
-        txtUsername.TabIndex = 2
-        ' 
-        ' txtPassword
-        ' 
-        txtPassword.Location = New Point(189, 258)
-        txtPassword.Name = "txtPassword"
-        txtPassword.PasswordChar = "*"c
-        txtPassword.Size = New Size(272, 27)
-        txtPassword.TabIndex = 3
-        ' 
-        ' btnLogin
-        ' 
-        btnLogin.Location = New Point(367, 336)
-        btnLogin.Name = "btnLogin"
-        btnLogin.Size = New Size(94, 29)
-        btnLogin.TabIndex = 4
-        btnLogin.Text = "Login"
-        btnLogin.UseVisualStyleBackColor = True
-        ' 
-        ' loginLbl
-        ' 
-        loginLbl.AutoSize = True
-        loginLbl.Location = New Point(254, 89)
-        loginLbl.Name = "loginLbl"
-        loginLbl.Size = New Size(46, 20)
-        loginLbl.TabIndex = 5
-        loginLbl.Text = "Login"
-        ' 
-        ' LoginForm
-        ' 
-        AutoScaleDimensions = New SizeF(8F, 20F)
-        AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(564, 450)
-        Controls.Add(loginLbl)
-        Controls.Add(btnLogin)
-        Controls.Add(txtPassword)
-        Controls.Add(txtUsername)
-        Controls.Add(passwordLbl)
-        Controls.Add(usernameLbl)
-        Name = "LoginForm"
-        Text = "Login - Academic Management System"
-        ResumeLayout(False)
-        PerformLayout()
+        Me.lblTitle = New System.Windows.Forms.Label()
+        Me.lblUsername = New System.Windows.Forms.Label()
+        Me.txtUsername = New System.Windows.Forms.TextBox()
+        Me.lblPassword = New System.Windows.Forms.Label()
+        Me.txtPassword = New System.Windows.Forms.TextBox()
+        Me.btnLogin = New System.Windows.Forms.Button()
+        Me.SuspendLayout()
+        '
+        'lblTitle
+        '
+        Me.lblTitle.AutoSize = True
+        Me.lblTitle.Font = New System.Drawing.Font("Segoe UI", 14.0F, System.Drawing.FontStyle.Bold)
+        Me.lblTitle.Location = New System.Drawing.Point(36, 24)
+        Me.lblTitle.Name = "lblTitle"
+        Me.lblTitle.Size = New System.Drawing.Size(141, 25)
+        Me.lblTitle.TabIndex = 0
+        Me.lblTitle.Text = "System Login"
+        '
+        'lblUsername
+        '
+        Me.lblUsername.AutoSize = True
+        Me.lblUsername.Font = New System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold)
+        Me.lblUsername.Location = New System.Drawing.Point(36, 74)
+        Me.lblUsername.Name = "lblUsername"
+        Me.lblUsername.Size = New System.Drawing.Size(81, 17)
+        Me.lblUsername.TabIndex = 1
+        Me.lblUsername.Text = "Username:"
+        '
+        'txtUsername
+        '
+        Me.txtUsername.Font = New System.Drawing.Font("Segoe UI", 9.5F)
+        Me.txtUsername.Location = New System.Drawing.Point(145, 70)
+        Me.txtUsername.Name = "txtUsername"
+        Me.txtUsername.Size = New System.Drawing.Size(210, 25)
+        Me.txtUsername.TabIndex = 2
+        '
+        'lblPassword
+        '
+        Me.lblPassword.AutoSize = True
+        Me.lblPassword.Font = New System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold)
+        Me.lblPassword.Location = New System.Drawing.Point(36, 118)
+        Me.lblPassword.Name = "lblPassword"
+        Me.lblPassword.Size = New System.Drawing.Size(75, 17)
+        Me.lblPassword.TabIndex = 3
+        Me.lblPassword.Text = "Password:"
+        '
+        'txtPassword
+        '
+        Me.txtPassword.Font = New System.Drawing.Font("Segoe UI", 9.5F)
+        Me.txtPassword.Location = New System.Drawing.Point(145, 114)
+        Me.txtPassword.Name = "txtPassword"
+        Me.txtPassword.PasswordChar = "*"c
+        Me.txtPassword.Size = New System.Drawing.Size(210, 25)
+        Me.txtPassword.TabIndex = 4
+        '
+        'btnLogin
+        '
+        Me.btnLogin.Font = New System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold)
+        Me.btnLogin.Location = New System.Drawing.Point(145, 158)
+        Me.btnLogin.Name = "btnLogin"
+        Me.btnLogin.Size = New Size(120, 34)
+        Me.btnLogin.TabIndex = 5
+        Me.btnLogin.Text = "Login"
+        Me.btnLogin.UseVisualStyleBackColor = True
+        '
+        'LoginForm
+        '
+        Me.AcceptButton = Me.btnLogin
+        Me.AutoScaleDimensions = New System.Drawing.SizeF(7.0F, 15.0F)
+        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        Me.ClientSize = New System.Drawing.Size(396, 224)
+        Me.Controls.Add(Me.btnLogin)
+        Me.Controls.Add(Me.txtPassword)
+        Me.Controls.Add(Me.lblPassword)
+        Me.Controls.Add(Me.txtUsername)
+        Me.Controls.Add(Me.lblUsername)
+        Me.Controls.Add(Me.lblTitle)
+        Me.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog
+        Me.MaximizeBox = False
+        Me.Name = "LoginForm"
+        Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
+        Me.Text = "Login"
+        Me.ResumeLayout(False)
+        Me.PerformLayout()
     End Sub
 
-    Friend WithEvents usernameLbl As Label
-    Friend WithEvents passwordLbl As Label
-    Friend WithEvents txtUsername As TextBox
-    Friend WithEvents txtPassword As TextBox
-    Friend WithEvents btnLogin As Button
-    Friend WithEvents loginLbl As Label
-
+    Friend WithEvents lblTitle As System.Windows.Forms.Label
+    Friend WithEvents lblUsername As System.Windows.Forms.Label
+    Friend WithEvents txtUsername As System.Windows.Forms.TextBox
+    Friend WithEvents lblPassword As System.Windows.Forms.Label
+    Friend WithEvents txtPassword As System.Windows.Forms.TextBox
+    Friend WithEvents btnLogin As System.Windows.Forms.Button
 End Class

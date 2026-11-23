@@ -1,9 +1,8 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class StudentDashboard
     Inherits System.Windows.Forms.Form
 
-    'Form overrides dispose to clean up the component list.
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
@@ -14,13 +13,9 @@ Partial Class StudentDashboard
         End Try
     End Sub
 
-    'Required by the Windows Form Designer
     Private components As System.ComponentModel.IContainer
 
-    'NOTE: The following procedure is required by the Windows Form Designer
-    'It can be modified using the Windows Form Designer.  
-    'Do not modify it using the code editor.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         dgvMyGrades = New DataGridView()
         dgvCourseAverages = New DataGridView()
@@ -31,61 +26,74 @@ Partial Class StudentDashboard
         CType(dgvCourseAverages, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         ' 
-        ' dgvMyGrades
-        ' 
-        dgvMyGrades.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
-        dgvMyGrades.Location = New Point(43, 136)
-        dgvMyGrades.Name = "dgvMyGrades"
-        dgvMyGrades.RowHeadersWidth = 51
-        dgvMyGrades.Size = New Size(542, 542)
-        dgvMyGrades.TabIndex = 0
-        ' 
-        ' dgvCourseAverages
-        ' 
-        dgvCourseAverages.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
-        dgvCourseAverages.Location = New Point(657, 136)
-        dgvCourseAverages.Name = "dgvCourseAverages"
-        dgvCourseAverages.RowHeadersWidth = 51
-        dgvCourseAverages.Size = New Size(524, 542)
-        dgvCourseAverages.TabIndex = 1
-        ' 
         ' lblWelcome
         ' 
         lblWelcome.AutoSize = True
-        lblWelcome.Location = New Point(43, 19)
+        lblWelcome.Font = New Font("Segoe UI", 13.0F, FontStyle.Bold)
+        lblWelcome.Location = New Point(28, 20)
         lblWelcome.Name = "lblWelcome"
-        lblWelcome.Size = New Size(74, 20)
+        lblWelcome.Size = New Size(190, 23)
         lblWelcome.TabIndex = 2
-        lblWelcome.Text = "Welcome:"
+        lblWelcome.Text = "Student Dashboard"
         ' 
         ' lblMyGrades
         ' 
         lblMyGrades.AutoSize = True
-        lblMyGrades.Location = New Point(271, 99)
+        lblMyGrades.Font = New Font("Segoe UI", 10.5F, FontStyle.Bold)
+        lblMyGrades.Location = New Point(28, 68)
         lblMyGrades.Name = "lblMyGrades"
-        lblMyGrades.Size = New Size(79, 20)
+        lblMyGrades.Size = New Size(94, 19)
         lblMyGrades.TabIndex = 3
         lblMyGrades.Text = "My Grades"
+        ' 
+        ' dgvMyGrades
+        ' 
+        dgvMyGrades.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left
+        dgvMyGrades.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+        dgvMyGrades.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
+        dgvMyGrades.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
+        dgvMyGrades.Location = New Point(28, 96)
+        dgvMyGrades.Name = "dgvMyGrades"
+        dgvMyGrades.ReadOnly = True
+        dgvMyGrades.RowHeadersWidth = 45
+        dgvMyGrades.Size = New Size(660, 596)
+        dgvMyGrades.TabIndex = 0
         ' 
         ' lblCourseAverage
         ' 
         lblCourseAverage.AutoSize = True
-        lblCourseAverage.Location = New Point(855, 99)
+        lblCourseAverage.Font = New Font("Segoe UI", 10.5F, FontStyle.Bold)
+        lblCourseAverage.Location = New Point(716, 68)
         lblCourseAverage.Name = "lblCourseAverage"
-        lblCourseAverage.Size = New Size(113, 20)
+        lblCourseAverage.Size = New Size(135, 19)
         lblCourseAverage.TabIndex = 4
         lblCourseAverage.Text = "Course Average"
         ' 
+        ' dgvCourseAverages
+        ' 
+        dgvCourseAverages.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
+        dgvCourseAverages.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+        dgvCourseAverages.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
+        dgvCourseAverages.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
+        dgvCourseAverages.Location = New Point(716, 96)
+        dgvCourseAverages.Name = "dgvCourseAverages"
+        dgvCourseAverages.ReadOnly = True
+        dgvCourseAverages.RowHeadersWidth = 45
+        dgvCourseAverages.Size = New Size(630, 596)
+        dgvCourseAverages.TabIndex = 1
+        ' 
         ' StudentDashboard
         ' 
-        AutoScaleDimensions = New SizeF(8F, 20F)
+        AutoScaleDimensions = New SizeF(7.0F, 15.0F)
         AutoScaleMode = AutoScaleMode.Font
-        ClientSize = New Size(1374, 724)
+        ClientSize = New Size(1374, 720)
         Controls.Add(lblCourseAverage)
         Controls.Add(lblMyGrades)
         Controls.Add(lblWelcome)
         Controls.Add(dgvCourseAverages)
         Controls.Add(dgvMyGrades)
+        FormBorderStyle = FormBorderStyle.Sizable
+        MinimumSize = New Size(900, 500)
         Name = "StudentDashboard"
         Text = "Student Dashboard"
         WindowState = FormWindowState.Maximized

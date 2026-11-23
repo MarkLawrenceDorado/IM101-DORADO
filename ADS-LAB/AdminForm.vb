@@ -9,6 +9,7 @@ Public Class AdminForm
     Public Sub New(adminUserId As Integer)
         InitializeComponent()
         _adminUserId = adminUserId
+        SessionManager.AttachStatusLabel(lblSession, Me)
 
         ' Populate the Teacher/Student choice
         cmbUserType.Items.Clear()
@@ -16,8 +17,12 @@ Public Class AdminForm
         cmbUserType.SelectedIndex = 0 ' default to Teacher, shows Department field
 
         LoadAllLists()
+        LoadEnrollmentLists()
         LoadAssignmentTypes()
         LoadAllGrades()
+        LoadCoursesAndInstructors()
+        AttachAutoComplete(txtGradeStudent, "SELECT CONCAT(student_id, ' - ', first_name, ' ', last_name) FROM Students")
+        AttachAutoComplete(txtGradeCourse, "SELECT CONCAT(course_code, ' - ', course_name) FROM Courses")
     End Sub
 
     ' =========================================================
@@ -33,6 +38,58 @@ Public Class AdminForm
         dtpDateOfBirth.Visible = isStudent
         lblEmail.Visible = isStudent
         txtEmail.Visible = isStudent
+        errProvider.SetError(cmbUserType, "")
+    End Sub
+
+    Private Function ValidateRegistration() As Boolean
+        errProvider.Clear()
+        Dim isStudent As Boolean = (cmbUserType.Text = "Student")
+        Dim valid As Boolean = True
+
+        valid = Check(errProvider, cmbUserType, cmbUserType.Text = "", "Choose Teacher or Student.") And valid
+
+        Dim username As String = txtNewUsername.Text.Trim()
+        valid = Check(errProvider, txtNewUsername, Not IsValidUsername(username),
+                      "3-30 characters: letters, numbers, dot or underscore.") And valid
+        If IsValidUsername(username) Then
+            valid = Check(errProvider, txtNewUsername,
+                          ValueExists("SELECT 1 FROM Users WHERE username = @u LIMIT 1", New MySqlParameter("@u", username)),
+                          "That username is already taken.") And valid
+        End If
+
+        Dim passwordMessage As String = PasswordProblem(txtNewPassword.Text)
+        valid = Check(errProvider, txtNewPassword, passwordMessage <> "", passwordMessage) And valid
+
+        valid = Check(errProvider, txtFirstName, Not IsValidName(txtFirstName.Text.Trim()),
+                      "Enter a first name (letters only, 50 characters maximum).") And valid
+        valid = Check(errProvider, txtLastName, Not IsValidName(txtLastName.Text.Trim()),
+                      "Enter a last name (letters only, 50 characters maximum).") And valid
+
+        valid = Check(errProvider, txtDepartment, Not isStudent AndAlso txtDepartment.Text.Trim().Length > 50,
+                      "Department must be 50 characters or fewer.") And valid
+
+        If isStudent Then
+            Dim email As String = txtEmail.Text.Trim()
+            valid = Check(errProvider, txtEmail, Not IsValidEmail(email), "Enter a valid email address.") And valid
+            If IsValidEmail(email) Then
+                valid = Check(errProvider, txtEmail,
+                              ValueExists("SELECT 1 FROM Students WHERE email = @e LIMIT 1", New MySqlParameter("@e", email)),
+                              "That email is already registered.") And valid
+            End If
+
+            valid = Check(errProvider, dtpDateOfBirth,
+                          dtpDateOfBirth.Value.Date > Date.Today OrElse dtpDateOfBirth.Value.Year < 1900,
+                          "Enter a valid date of birth.") And valid
+        End If
+
+        Return valid
+    End Function
+
+    Private Sub ClearFieldError(sender As Object, e As EventArgs) _
+        Handles txtNewUsername.TextChanged, txtNewPassword.TextChanged, txtFirstName.TextChanged,
+                txtLastName.TextChanged, txtDepartment.TextChanged, txtEmail.TextChanged,
+                dtpDateOfBirth.ValueChanged
+        errProvider.SetError(DirectCast(sender, Control), "")
     End Sub
 
     Private Sub btnAddUser_Click(sender As Object, e As EventArgs) Handles btnAddUser.Click
@@ -42,15 +99,7 @@ Public Class AdminForm
         Dim firstName As String = txtFirstName.Text.Trim()
         Dim lastName As String = txtLastName.Text.Trim()
 
-        If userType = "" Then
-            MessageBox.Show("Select whether you're adding a Teacher or a Student.", "Missing Info")
-            Return
-        End If
-
-        If username = "" OrElse password = "" OrElse firstName = "" OrElse lastName = "" Then
-            MessageBox.Show("Please fill in username, password, first name, and last name.", "Missing Info")
-            Return
-        End If
+        If Not ValidateRegistration() Then Return
 
         Dim conn As MySqlConnection = DBConnection.GetConnection()
 
@@ -91,10 +140,6 @@ Public Class AdminForm
                     Dim dob As Date = dtpDateOfBirth.Value.Date
                     Dim email As String = txtEmail.Text.Trim()
 
-                    If email = "" Then
-                        Throw New Exception("Email is required for a student.")
-                    End If
-
                     Dim insertStudentQuery As String =
                         "INSERT INTO Students (user_id, first_name, last_name, date_of_birth, email) " &
                         "VALUES (@userId, @firstName, @lastName, @dob, @email)"
@@ -118,9 +163,15 @@ Public Class AdminForm
                 txtLastName.Clear()
                 txtDepartment.Clear()
                 txtEmail.Clear()
+                errProvider.Clear()
 
-                ' Refresh the grids
+                ' Refresh the grids and related controls
                 LoadAllLists()
+                If userType = "Student" Then
+                    LoadEnrollmentLists()
+                ElseIf userType = "Teacher" Then
+                    LoadCoursesAndInstructors()
+                End If
 
             Catch ex As Exception
                 transaction.Rollback()
@@ -173,6 +224,8 @@ Public Class AdminForm
 
     Private Sub btnRefresh_Click(sender As Object, e As EventArgs) Handles btnRefresh.Click
         LoadAllLists()
+        LoadEnrollmentLists()
+        LoadCoursesAndInstructors()
     End Sub
 
     ' =========================================================
@@ -187,8 +240,9 @@ Public Class AdminForm
             Return
         End If
 
-        If newPassword.Length < 8 Then
-            MessageBox.Show("Password must be at least 8 characters.", "Weak Password")
+        Dim problem As String = PasswordProblem(newPassword)
+        If problem <> "" Then
+            MessageBox.Show(problem, "Weak Password")
             Return
         End If
 
@@ -380,84 +434,423 @@ Public Class AdminForm
     End Sub
 
     ' =========================================================
-    '  CUSTOM TAB STYLING (unchanged from your version)
+    '  CUSTOM TAB STYLING
     ' =========================================================
     Private Sub tabsController_DrawItem(sender As Object, e As DrawItemEventArgs) _
     Handles tabsController.DrawItem
 
         Dim tab As TabControl = DirectCast(sender, TabControl)
-
         Dim tabPage As TabPage = tab.TabPages(e.Index)
-
-        ' Tab rectangle
         Dim rect As Rectangle = e.Bounds
 
-        ' Background
         If e.Index = tab.SelectedIndex Then
             e.Graphics.FillRectangle(Brushes.White, rect)
         Else
-            e.Graphics.FillRectangle(
-            New SolidBrush(Color.FromArgb(245, 247, 250)),
-            rect
-        )
+            e.Graphics.FillRectangle(New SolidBrush(Color.FromArgb(245, 247, 250)), rect)
         End If
 
-        ' Blue selected indicator
         If e.Index = tab.SelectedIndex Then
             Using indicator As New SolidBrush(Color.FromArgb(0, 120, 215))
-                e.Graphics.FillRectangle(
-                indicator,
-                rect.X,
-                rect.Y,
-                4,
-                rect.Height
-            )
+                e.Graphics.FillRectangle(indicator, rect.X, rect.Y, 4, rect.Height)
             End Using
         End If
 
-        ' Text
-        Dim textRect As New Rectangle(
-        rect.X + 15,
-        rect.Y,
-        rect.Width - 20,
-        rect.Height
-    )
+        Dim textRect As New Rectangle(rect.X + 15, rect.Y, rect.Width - 20, rect.Height)
+        Dim textColor As Color = If(e.Index = tab.SelectedIndex, Color.FromArgb(30, 30, 30), Color.FromArgb(90, 90, 90))
 
-        Dim textColor As Color
-
-        If e.Index = tab.SelectedIndex Then
-            textColor = Color.FromArgb(30, 30, 30)
-        Else
-            textColor = Color.FromArgb(90, 90, 90)
-        End If
-
-        Using font As New Font(
-        "Segoe UI",
-        10,
-        If(e.Index = tab.SelectedIndex,
-           FontStyle.Bold,
-           FontStyle.Regular)
-    )
-
+        Using font As New Font("Segoe UI", 10, If(e.Index = tab.SelectedIndex, FontStyle.Bold, FontStyle.Regular))
             Using brush As New SolidBrush(textColor)
+                Dim format As New StringFormat() With {
+                    .Alignment = StringAlignment.Near,
+                    .LineAlignment = StringAlignment.Center
+                }
+                e.Graphics.DrawString(tabPage.Text, font, brush, textRect, format)
+            End Using
+        End Using
+    End Sub
 
-                Dim format As New StringFormat()
+    Private Sub LoadEnrollmentLists()
+        Dim conn As MySqlConnection = DBConnection.GetConnection()
+        Try
+            conn.Open()
 
-                format.Alignment = StringAlignment.Near
-                format.LineAlignment = StringAlignment.Center
+            Dim studentsTable As New DataTable()
+            Dim studentsAdapter As New MySqlDataAdapter(
+                "SELECT student_id, CONCAT(first_name, ' ', last_name) AS full_name " &
+                "FROM Students ORDER BY last_name, first_name", conn)
+            studentsAdapter.Fill(studentsTable)
 
-                e.Graphics.DrawString(
-                tabPage.Text,
-                font,
-                brush,
-                textRect,
-                format
-            )
+            Dim coursesTable As New DataTable()
+            Dim coursesAdapter As New MySqlDataAdapter(
+                "SELECT course_id, CONCAT(course_code, ' - ', course_name) AS course_label " &
+                "FROM Courses ORDER BY course_code", conn)
+            coursesAdapter.Fill(coursesTable)
 
+            cmbEnrollStudent.DataSource = studentsTable
+            cmbEnrollStudent.DisplayMember = "full_name"
+            cmbEnrollStudent.ValueMember = "student_id"
+
+            cmbEnrollCourse.DataSource = coursesTable
+            cmbEnrollCourse.DisplayMember = "course_label"
+            cmbEnrollCourse.ValueMember = "course_id"
+
+            clbBulkStudents.DataSource = studentsTable.Copy()
+            clbBulkStudents.DisplayMember = "full_name"
+            clbBulkStudents.ValueMember = "student_id"
+
+            cmbBulkCourse.DataSource = coursesTable.Copy()
+            cmbBulkCourse.DisplayMember = "course_label"
+            cmbBulkCourse.ValueMember = "course_id"
+
+        Catch ex As Exception
+            MessageBox.Show("Error loading enrollment lists: " & ex.Message, "Error")
+        Finally
+            conn.Close()
+        End Try
+    End Sub
+
+    ' ---------- Single enrollment: calls sp_EnrollStudent ----------
+    Private Sub btnEnrollStudent_Click(sender As Object, e As EventArgs) Handles btnEnrollStudent.Click
+        If cmbEnrollStudent.SelectedValue Is Nothing OrElse cmbEnrollCourse.SelectedValue Is Nothing Then
+            MessageBox.Show("Select a student and a course.", "Missing Info")
+            Return
+        End If
+
+        Dim conn As MySqlConnection = DBConnection.GetConnection()
+        Try
+            conn.Open()
+
+            Using cmd As New MySqlCommand("sp_EnrollStudent", conn)
+                cmd.CommandType = CommandType.StoredProcedure
+                cmd.Parameters.AddWithValue("@p_student_id", Convert.ToInt32(cmbEnrollStudent.SelectedValue))
+                cmd.Parameters.AddWithValue("@p_course_id", Convert.ToInt32(cmbEnrollCourse.SelectedValue))
+
+                Dim resultParam As New MySqlParameter("@p_result", MySqlDbType.VarChar, 255)
+                resultParam.Direction = ParameterDirection.Output
+                cmd.Parameters.Add(resultParam)
+
+                cmd.ExecuteNonQuery()
+
+                Dim message As String = Convert.ToString(resultParam.Value)
+                lblEnrollStatus.Text = message
+                lblEnrollStatus.ForeColor = If(message.StartsWith("Success"), Color.Green, Color.Red)
             End Using
 
-        End Using
+        Catch ex As Exception
+            lblEnrollStatus.Text = "Enrollment error: " & ex.Message
+            lblEnrollStatus.ForeColor = Color.Red
+        Finally
+            conn.Close()
+        End Try
+    End Sub
 
+    ' ---------- Bulk enrollment: one transaction, all-or-nothing ----------
+    Private Sub btnBulkEnroll_Click(sender As Object, e As EventArgs) Handles btnBulkEnroll.Click
+        If clbBulkStudents.CheckedItems.Count = 0 OrElse cmbBulkCourse.SelectedValue Is Nothing Then
+            MessageBox.Show("Check at least one student and select a course.", "Missing Info")
+            Return
+        End If
+
+        Dim courseId As Integer = Convert.ToInt32(cmbBulkCourse.SelectedValue)
+        Dim enrolled As Integer = 0
+        Dim skipped As Integer = 0
+
+        Dim conn As MySqlConnection = DBConnection.GetConnection()
+        Try
+            conn.Open()
+            Dim transaction As MySqlTransaction = conn.BeginTransaction()
+
+            Try
+                For Each item As DataRowView In clbBulkStudents.CheckedItems
+                    Dim studentId As Integer = Convert.ToInt32(item("student_id"))
+
+                    Using checkCmd As New MySqlCommand(
+                        "SELECT COUNT(*) FROM Enrollments WHERE student_id = @s AND course_id = @c", conn, transaction)
+                        checkCmd.Parameters.AddWithValue("@s", studentId)
+                        checkCmd.Parameters.AddWithValue("@c", courseId)
+
+                        If Convert.ToInt32(checkCmd.ExecuteScalar()) > 0 Then
+                            skipped += 1
+                            Continue For
+                        End If
+                    End Using
+
+                    Using insertCmd As New MySqlCommand(
+                        "INSERT INTO Enrollments (student_id, course_id, enrollment_date) VALUES (@s, @c, NOW())",
+                        conn, transaction)
+                        insertCmd.Parameters.AddWithValue("@s", studentId)
+                        insertCmd.Parameters.AddWithValue("@c", courseId)
+                        insertCmd.ExecuteNonQuery()
+                        enrolled += 1
+                    End Using
+                Next
+
+                transaction.Commit()
+
+                lblEnrollStatus.Text = "Bulk enrollment complete: " & enrolled & " enrolled, " & skipped & " already enrolled."
+                lblEnrollStatus.ForeColor = Color.Green
+
+                For i As Integer = 0 To clbBulkStudents.Items.Count - 1
+                    clbBulkStudents.SetItemChecked(i, False)
+                Next
+
+            Catch ex As Exception
+                transaction.Rollback()
+                lblEnrollStatus.Text = "Bulk enrollment failed, nothing was saved: " & ex.Message
+                lblEnrollStatus.ForeColor = Color.Red
+            End Try
+
+        Catch ex As Exception
+            MessageBox.Show("Database connection error: " & ex.Message, "Error")
+        Finally
+            conn.Close()
+        End Try
+    End Sub
+
+    Private Sub txtSearchUsers_TextChanged(sender As Object, e As EventArgs) Handles txtSearchUsers.TextChanged
+        FilterGrid(dgvUsers, txtSearchUsers.Text)
+    End Sub
+
+    Private Sub txtSearchInstructors_TextChanged(sender As Object, e As EventArgs) Handles txtSearchInstructors.TextChanged
+        FilterGrid(dgvInstructors, txtSearchInstructors.Text)
+    End Sub
+
+    Private Sub txtSearchStudents_TextChanged(sender As Object, e As EventArgs) Handles txtSearchStudents.TextChanged
+        FilterGrid(dgvStudents, txtSearchStudents.Text)
+    End Sub
+
+    Private Sub txtSearchTypes_TextChanged(sender As Object, e As EventArgs) Handles txtSearchTypes.TextChanged
+        FilterGrid(dgvAssignmentTypes, txtSearchTypes.Text)
+    End Sub
+
+    ' ---------- Grades search (server-side, uses idx_grades_student_course) ----------
+    Private Sub btnSearchGrades_Click(sender As Object, e As EventArgs) Handles btnSearchGrades.Click
+        Dim sql As New System.Text.StringBuilder(
+            "SELECT stu.first_name AS student_first, stu.last_name AS student_last, " &
+            "c.course_code, c.course_name, at.type_name, g.grade, g.date_recorded " &
+            "FROM Grades g " &
+            "INNER JOIN Students stu ON g.student_id = stu.student_id " &
+            "INNER JOIN Courses c ON g.course_id = c.course_id " &
+            "INNER JOIN AssignmentTypes at ON g.type_id = at.type_id WHERE 1=1")
+
+        Dim params As New List(Of MySqlParameter)
+
+        Dim studentText As String = txtGradeStudent.Text.Trim()
+        If studentText <> "" Then
+            Dim studentId As Integer? = ParseLeadingId(studentText)
+            If studentId Is Nothing Then
+                MessageBox.Show("Pick a student from the suggestions (or type the student ID).", "Search")
+                Return
+            End If
+            sql.Append(" AND g.student_id = @studentId")
+            params.Add(New MySqlParameter("@studentId", studentId.Value))
+        End If
+
+        Dim courseText As String = txtGradeCourse.Text.Trim()
+        If courseText <> "" Then
+            sql.Append(" AND c.course_code = @courseCode")
+            params.Add(New MySqlParameter("@courseCode", ParseCourseCode(courseText)))
+        End If
+
+        sql.Append(" ORDER BY g.date_recorded DESC")
+
+        Dim conn As MySqlConnection = DBConnection.GetConnection()
+        Try
+            conn.Open()
+            Dim adapter As New MySqlDataAdapter(sql.ToString(), conn)
+            adapter.SelectCommand.Parameters.AddRange(params.ToArray())
+            Dim table As New DataTable()
+            adapter.Fill(table)
+            dgvAllGrades.DataSource = table
+        Catch ex As Exception
+            MessageBox.Show("Error searching grades: " & ex.Message, "Error")
+        Finally
+            conn.Close()
+        End Try
+    End Sub
+
+    Private Sub LoadCoursesAndInstructors()
+        Dim conn As MySqlConnection = DBConnection.GetConnection()
+        Try
+            conn.Open()
+
+            Dim instructorsTable As New DataTable()
+            Dim instAdapter As New MySqlDataAdapter(
+                "SELECT instructor_id, CONCAT(first_name, ' ', last_name, " &
+                "IF(department IS NULL OR department = '', '', CONCAT(' (', department, ')'))) AS instructor_label " &
+                "FROM Instructors ORDER BY last_name, first_name", conn)
+            instAdapter.Fill(instructorsTable)
+
+            Dim unassignedRow As DataRow = instructorsTable.NewRow()
+            unassignedRow("instructor_id") = DBNull.Value
+            unassignedRow("instructor_label") = "(Unassigned)"
+            instructorsTable.Rows.InsertAt(unassignedRow, 0)
+
+            cmbCourseInstructor.DataSource = instructorsTable
+            cmbCourseInstructor.DisplayMember = "instructor_label"
+            cmbCourseInstructor.ValueMember = "instructor_id"
+
+            If dgvCourses IsNot Nothing Then
+                Dim coursesAdapter As New MySqlDataAdapter(
+                    "SELECT c.course_id, c.course_code, c.course_name, " &
+                    "COALESCE(CONCAT(i.first_name, ' ', i.last_name), 'Unassigned') AS instructor " &
+                    "FROM Courses c " &
+                    "LEFT JOIN Instructors i ON c.instructor_id = i.instructor_id " &
+                    "ORDER BY c.course_code", conn)
+                Dim coursesTable As New DataTable()
+                coursesAdapter.Fill(coursesTable)
+                dgvCourses.DataSource = coursesTable
+            End If
+
+        Catch ex As Exception
+            MessageBox.Show("Error loading courses/instructors: " & ex.Message, "Error")
+        Finally
+            conn.Close()
+        End Try
+    End Sub
+
+    Private Sub btnAddCourse_Click(sender As Object, e As EventArgs) Handles btnAddCourse.Click
+        Dim courseCode As String = txtCourseCode.Text.Trim().ToUpper()
+        Dim courseName As String = txtCourseName.Text.Trim()
+
+        If courseCode = "" OrElse courseName = "" Then
+            MessageBox.Show("Enter both a course code (e.g., IT 101) and a course title.", "Missing Info")
+            Return
+        End If
+
+        Dim instructorParam As Object = DBNull.Value
+        Dim selectedVal As Object = cmbCourseInstructor.SelectedValue
+        If selectedVal IsNot Nothing AndAlso Not IsDBNull(selectedVal) AndAlso Not (TypeOf selectedVal Is DataRowView) Then
+            instructorParam = Convert.ToInt32(selectedVal)
+        End If
+
+        Dim conn As MySqlConnection = DBConnection.GetConnection()
+        Try
+            conn.Open()
+
+            Using checkCmd As New MySqlCommand("SELECT COUNT(*) FROM Courses WHERE course_code = @code", conn)
+                checkCmd.Parameters.AddWithValue("@code", courseCode)
+                If Convert.ToInt32(checkCmd.ExecuteScalar()) > 0 Then
+                    MessageBox.Show("Course code '" & courseCode & "' already exists.", "Duplicate Course")
+                    Return
+                End If
+            End Using
+
+            Dim sql As String =
+                "INSERT INTO Courses (course_code, course_name, instructor_id) " &
+                "VALUES (@code, @name, @instructorId)"
+
+            Using cmd As New MySqlCommand(sql, conn)
+                cmd.Parameters.AddWithValue("@code", courseCode)
+                cmd.Parameters.AddWithValue("@name", courseName)
+                cmd.Parameters.AddWithValue("@instructorId", instructorParam)
+                cmd.ExecuteNonQuery()
+            End Using
+
+            If lblCourseStatus IsNot Nothing Then
+                lblCourseStatus.Text = "Course '" & courseCode & " - " & courseName & "' created."
+                lblCourseStatus.ForeColor = Color.Green
+            Else
+                MessageBox.Show("Course '" & courseCode & " - " & courseName & "' created.", "Success")
+            End If
+
+            txtCourseCode.Clear()
+            txtCourseName.Clear()
+            If cmbCourseInstructor.Items.Count > 0 Then
+                cmbCourseInstructor.SelectedIndex = 0
+            End If
+
+            LoadCoursesAndInstructors()
+            LoadEnrollmentLists()
+            AttachAutoComplete(txtGradeCourse, "SELECT CONCAT(course_code, ' - ', course_name) FROM Courses")
+
+        Catch ex As Exception
+            MessageBox.Show("Error creating course: " & ex.Message, "Error")
+        Finally
+            conn.Close()
+        End Try
+    End Sub
+
+    Private Sub btnClearGradeSearch_Click(sender As Object, e As EventArgs) Handles btnClearGradeSearch.Click
+        txtGradeStudent.Clear()
+        txtGradeCourse.Clear()
+        LoadAllGrades()
+    End Sub
+
+    Private Sub btnAuditLog_Click(sender As Object, e As EventArgs) Handles btnAuditLog.Click
+        Dim form As New AuditLogForm()
+        form.Show()
+    End Sub
+
+    Private Sub btnBackups_Click(sender As Object, e As EventArgs) Handles btnBackups.Click
+        Dim form As New BackupForm()
+        form.Show()
+    End Sub
+
+    Private Sub btnReportsForm_Click(sender As Object, e As EventArgs) Handles btnReportsForm.Click
+        Dim reports As New ReportsForm(_adminUserId, 1)
+        reports.Show()
+    End Sub
+
+    Private Sub FilterGrid(grid As DataGridView, searchText As String)
+        Dim dt As DataTable = TryCast(grid.DataSource, DataTable)
+        If dt Is Nothing Then Return
+
+        Dim term As String = searchText.Trim().Replace("'", "''")
+        If term = "" Then
+            dt.DefaultView.RowFilter = ""
+            Return
+        End If
+
+        Dim parts As New List(Of String)()
+        For Each col As DataColumn In dt.Columns
+            If col.DataType Is GetType(String) Then
+                parts.Add(String.Format("[{0}] LIKE '%{1}%'", col.ColumnName, term))
+            End If
+        Next
+
+        dt.DefaultView.RowFilter = String.Join(" OR ", parts)
+    End Sub
+
+    Private Function ParseLeadingId(text As String) As Integer?
+        Dim digits As New String(text.TakeWhile(AddressOf Char.IsDigit).ToArray())
+        Dim id As Integer
+        If digits <> "" AndAlso Integer.TryParse(digits, id) Then
+            Return id
+        End If
+        Return Nothing
+    End Function
+
+    Private Function ParseCourseCode(text As String) As String
+        Dim cleaned As String = text.Trim().ToUpper()
+        Dim dashIdx As Integer = cleaned.IndexOf(" - ")
+        If dashIdx > 0 Then
+            cleaned = cleaned.Substring(0, dashIdx).Trim()
+        End If
+        Return cleaned
+    End Function
+
+    Private Sub AttachAutoComplete(box As TextBox, sql As String)
+        Dim conn As MySqlConnection = DBConnection.GetConnection()
+        Try
+            conn.Open()
+            Using cmd As New MySqlCommand(sql, conn)
+                Using reader As MySqlDataReader = cmd.ExecuteReader()
+                    Dim items As New AutoCompleteStringCollection()
+                    While reader.Read()
+                        If Not reader.IsDBNull(0) Then
+                            items.Add(reader.GetString(0))
+                        End If
+                    End While
+                    box.AutoCompleteMode = AutoCompleteMode.SuggestAppend
+                    box.AutoCompleteSource = AutoCompleteSource.CustomSource
+                    box.AutoCompleteCustomSource = items
+                End Using
+            End Using
+        Catch
+        Finally
+            conn.Close()
+        End Try
     End Sub
 
 End Class

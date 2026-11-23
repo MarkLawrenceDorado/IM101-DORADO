@@ -1,0 +1,36 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+dist/
+
+# Local configuration and secrets
+.env
+.env.*
+*.dat
+**/db_credentials.dat
+**/CredentialStore.vb
+**/AppSettings.vb
+
+# Logs and temporary files
+*.log
+logs/
+**/ApplicationLog.txt
+*.tmp
+*.bak
+*.cache
+
+# NuGet
+*.nupkg
+packages/
