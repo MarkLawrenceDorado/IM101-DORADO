@@ -111,5 +111,8 @@ Public Class StudentDashboard
             End Try
         End Using
     End Sub
-
+    Private Sub btnMySoa_Click(sender As Object, e As EventArgs) Handles btnMySoa.Click
+        Dim soaForm As New SoaForm(roleId:=3, loggedInUserId:=_studentUserId)
+        soaForm.ShowDialog()
+    End Sub
 End Class

@@ -35,6 +35,16 @@ Partial Class StudentDashboard
         lblWelcome.Size = New Size(190, 23)
         lblWelcome.TabIndex = 2
         lblWelcome.Text = "Student Dashboard"
+        ' Inside InitializeComponent() — right after lblWelcome setup:
+        btnMySoa = New Button()
+        btnMySoa.Anchor = AnchorStyles.Top Or AnchorStyles.Right
+        btnMySoa.Font = New Font("Segoe UI", 9.5F, FontStyle.Bold)
+        btnMySoa.Location = New Point(1160, 18)
+        btnMySoa.Name = "btnMySoa"
+        btnMySoa.Size = New Size(186, 34)
+        btnMySoa.TabIndex = 5
+        btnMySoa.Text = "My SOA"
+        btnMySoa.UseVisualStyleBackColor = True
         ' 
         ' lblMyGrades
         ' 
@@ -92,6 +102,8 @@ Partial Class StudentDashboard
         Controls.Add(lblWelcome)
         Controls.Add(dgvCourseAverages)
         Controls.Add(dgvMyGrades)
+        ' Inside StudentDashboard.Controls.Add(...) block:
+        Controls.Add(btnMySoa)
         FormBorderStyle = FormBorderStyle.Sizable
         MinimumSize = New Size(900, 500)
         Name = "StudentDashboard"
@@ -108,4 +120,6 @@ Partial Class StudentDashboard
     Friend WithEvents lblWelcome As Label
     Friend WithEvents lblMyGrades As Label
     Friend WithEvents lblCourseAverage As Label
+    ' At the bottom of StudentDashboard.Designer.vb with the other Friend WithEvents controls:
+    Friend WithEvents btnMySoa As Button
 End Class

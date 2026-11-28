@@ -134,7 +134,8 @@ Public Module SessionManager
                     cmd.ExecuteNonQuery()
                 End Using
             End Using
-        Catch
+        Catch ex As Exception
+            ApplicationLogger.LogError("Session operation failed: " & ex.Message, ex)
         End Try
 
         DBConnection.CurrentUserId = 0
@@ -177,7 +178,8 @@ Public Module SessionManager
                     cmd.ExecuteNonQuery()
                 End Using
             End Using
-        Catch
+        Catch ex As Exception
+            ApplicationLogger.LogError("Session operation failed: " & ex.Message, ex)
         End Try
     End Sub
 
@@ -228,7 +230,8 @@ Public Module SessionManager
             For Each address As IPAddress In Dns.GetHostAddresses(Dns.GetHostName())
                 If address.AddressFamily = AddressFamily.InterNetwork Then Return address.ToString()
             Next
-        Catch
+        Catch ex As Exception
+            ApplicationLogger.LogError("Session operation failed: " & ex.Message, ex)
         End Try
         Return "127.0.0.1"
     End Function

@@ -363,6 +363,29 @@ Public Class TeacherDashboard
         End Using
     End Sub
 
+    Private Sub SaveFinalGradeOverride(studentId As Integer, courseId As Integer, finalGrade As Decimal)
+        Dim conn As MySqlConnection = DBConnection.GetConnection()
+        Try
+            conn.Open()
+            Dim sql As String =
+            "INSERT INTO FinalGrades (student_id, course_id, final_grade, is_override, updated_at) " &
+            "VALUES (@studentId, @courseId, @finalGrade, 1, NOW()) " &
+            "ON DUPLICATE KEY UPDATE " &
+            "final_grade = VALUES(final_grade), " &
+            "is_override = 1, " &
+            "updated_at = NOW()"
+
+            Using cmd As New MySqlCommand(sql, conn)
+                cmd.Parameters.AddWithValue("@studentId", studentId)
+                cmd.Parameters.AddWithValue("@courseId", courseId)
+                cmd.Parameters.AddWithValue("@finalGrade", finalGrade)
+                cmd.ExecuteNonQuery()
+            End Using
+        Finally
+            conn.Close()
+        End Try
+    End Sub
+
     Private Sub btnClearCourseSearch_Click(sender As Object, e As EventArgs) Handles btnCourseSearchClear.Click
         txtCourseSearch.Clear()
         lblSearchStatus.Text = ""

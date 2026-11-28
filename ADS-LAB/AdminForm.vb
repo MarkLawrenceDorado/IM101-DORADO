@@ -189,7 +189,7 @@ Public Class AdminForm
     ' =========================================================
     '  VIEW LISTS: Users, Instructors, Students
     ' =========================================================
-    Private Sub LoadAllLists()
+    Friend Sub LoadAllLists()
         Dim conn As MySqlConnection = DBConnection.GetConnection()
         Try
             conn.Open()
@@ -278,7 +278,7 @@ Public Class AdminForm
     ' =========================================================
     '  ASSIGNMENT TYPES — CRUD (Add / Edit / Delete)
     ' =========================================================
-    Private Sub LoadAssignmentTypes()
+    Friend Sub LoadAssignmentTypes()
         Dim conn As MySqlConnection = DBConnection.GetConnection()
         Try
             conn.Open()
@@ -305,9 +305,28 @@ Public Class AdminForm
             Return
         End If
 
+        If weightValue < 0D OrElse weightValue > 100D Then
+            MessageBox.Show("Each assignment weight must be between 0 and 100.", "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return
+        End If
+
         Dim conn As MySqlConnection = DBConnection.GetConnection()
         Try
             conn.Open()
+
+            ' Check total default_weight across existing AssignmentTypes + this new one
+            Dim existingTotal As Decimal = 0D
+            Using sumCmd As New MySqlCommand("SELECT COALESCE(SUM(default_weight), 0) FROM AssignmentTypes", conn)
+                existingTotal = Convert.ToDecimal(sumCmd.ExecuteScalar())
+            End Using
+
+            Dim totalWeight As Decimal = existingTotal + weightValue
+            If Math.Abs(totalWeight - 100D) > 0.01D Then
+                MessageBox.Show("Total assignment weights must equal 100% (current total with this entry: " & totalWeight.ToString("0.##") & "%).",
+                                "Validation Error", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return
+            End If
+
             Dim query As String = "INSERT INTO AssignmentTypes (type_name, default_weight) VALUES (@name, @weight)"
             Dim cmd As New MySqlCommand(query, conn)
             cmd.Parameters.AddWithValue("@name", typeName)
@@ -407,7 +426,7 @@ Public Class AdminForm
     ' =========================================================
     '  ALL GRADES (read-only, system-wide)
     ' =========================================================
-    Private Sub LoadAllGrades()
+    Friend Sub LoadAllGrades()
         Dim conn As MySqlConnection = DBConnection.GetConnection()
         Try
             conn.Open()
@@ -469,7 +488,7 @@ Public Class AdminForm
         End Using
     End Sub
 
-    Private Sub LoadEnrollmentLists()
+    Friend Sub LoadEnrollmentLists()
         Dim conn As MySqlConnection = DBConnection.GetConnection()
         Try
             conn.Open()
@@ -669,7 +688,7 @@ Public Class AdminForm
         End Try
     End Sub
 
-    Private Sub LoadCoursesAndInstructors()
+    Friend Sub LoadCoursesAndInstructors()
         Dim conn As MySqlConnection = DBConnection.GetConnection()
         Try
             conn.Open()
@@ -692,11 +711,11 @@ Public Class AdminForm
 
             If dgvCourses IsNot Nothing Then
                 Dim coursesAdapter As New MySqlDataAdapter(
-                    "SELECT c.course_id, c.course_code, c.course_name, " &
-                    "COALESCE(CONCAT(i.first_name, ' ', i.last_name), 'Unassigned') AS instructor " &
-                    "FROM Courses c " &
-                    "LEFT JOIN Instructors i ON c.instructor_id = i.instructor_id " &
-                    "ORDER BY c.course_code", conn)
+                "SELECT c.course_id, c.course_code, c.course_name, c.course_fee, " &
+                "COALESCE(CONCAT(i.first_name, ' ', i.last_name), 'Unassigned') AS instructor " &
+                "FROM Courses c " &
+                "LEFT JOIN Instructors i ON c.instructor_id = i.instructor_id " &
+                "ORDER BY c.course_code", conn)
                 Dim coursesTable As New DataTable()
                 coursesAdapter.Fill(coursesTable)
                 dgvCourses.DataSource = coursesTable
@@ -709,12 +728,24 @@ Public Class AdminForm
         End Try
     End Sub
 
-    Private Sub btnAddCourse_Click(sender As Object, e As EventArgs) Handles btnAddCourse.Click
+    Private Sub btnUpdateCourse_Click(sender As Object, e As EventArgs) Handles btnUpdateCourse.Click
+        If dgvCourses.SelectedRows.Count = 0 Then
+            MessageBox.Show("Select a course row to update.", "No Selection")
+            Return
+        End If
+
+        Dim courseId As Integer = Convert.ToInt32(dgvCourses.SelectedRows(0).Cells("course_id").Value)
         Dim courseCode As String = txtCourseCode.Text.Trim().ToUpper()
         Dim courseName As String = txtCourseName.Text.Trim()
+        Dim courseFee As Decimal
 
         If courseCode = "" OrElse courseName = "" Then
-            MessageBox.Show("Enter both a course code (e.g., IT 101) and a course title.", "Missing Info")
+            MessageBox.Show("Enter both a course code and a course title.", "Missing Info")
+            Return
+        End If
+
+        If Not Decimal.TryParse(txtCourseFee.Text.Trim(), courseFee) OrElse courseFee < 0D Then
+            MessageBox.Show("Enter a valid course fee (0 or greater).", "Invalid Fee", MessageBoxButtons.OK, MessageBoxIcon.Warning)
             Return
         End If
 
@@ -728,34 +759,80 @@ Public Class AdminForm
         Try
             conn.Open()
 
-            Using checkCmd As New MySqlCommand("SELECT COUNT(*) FROM Courses WHERE course_code = @code", conn)
-                checkCmd.Parameters.AddWithValue("@code", courseCode)
-                If Convert.ToInt32(checkCmd.ExecuteScalar()) > 0 Then
-                    MessageBox.Show("Course code '" & courseCode & "' already exists.", "Duplicate Course")
+            Using dupCmd As New MySqlCommand(
+                "SELECT COUNT(*) FROM Courses WHERE course_code = @code AND course_id <> @id", conn)
+                dupCmd.Parameters.AddWithValue("@code", courseCode)
+                dupCmd.Parameters.AddWithValue("@id", courseId)
+                If Convert.ToInt32(dupCmd.ExecuteScalar()) > 0 Then
+                    MessageBox.Show("Another course already uses code '" & courseCode & "'.", "Duplicate Course")
                     Return
                 End If
             End Using
 
             Dim sql As String =
-                "INSERT INTO Courses (course_code, course_name, instructor_id) " &
-                "VALUES (@code, @name, @instructorId)"
+                "UPDATE Courses SET course_code = @code, course_name = @name, " &
+                "course_fee = @fee, instructor_id = @instructorId WHERE course_id = @id"
 
             Using cmd As New MySqlCommand(sql, conn)
                 cmd.Parameters.AddWithValue("@code", courseCode)
                 cmd.Parameters.AddWithValue("@name", courseName)
+                cmd.Parameters.AddWithValue("@fee", courseFee)
                 cmd.Parameters.AddWithValue("@instructorId", instructorParam)
+                cmd.Parameters.AddWithValue("@id", courseId)
                 cmd.ExecuteNonQuery()
             End Using
 
             If lblCourseStatus IsNot Nothing Then
-                lblCourseStatus.Text = "Course '" & courseCode & " - " & courseName & "' created."
+                lblCourseStatus.Text = "Course '" & courseCode & "' updated."
                 lblCourseStatus.ForeColor = Color.Green
             Else
-                MessageBox.Show("Course '" & courseCode & " - " & courseName & "' created.", "Success")
+                MessageBox.Show("Course '" & courseCode & "' updated.", "Success")
+            End If
+
+            LoadCoursesAndInstructors()
+            LoadEnrollmentLists()
+            AttachAutoComplete(txtGradeCourse, "SELECT CONCAT(course_code, ' - ', course_name) FROM Courses")
+
+        Catch ex As Exception
+            MessageBox.Show("Error updating course: " & ex.Message, "Error")
+        Finally
+            conn.Close()
+        End Try
+    End Sub
+
+    Private Sub btnDeleteCourse_Click(sender As Object, e As EventArgs) Handles btnDeleteCourse.Click
+        If dgvCourses.SelectedRows.Count = 0 Then
+            MessageBox.Show("Select a course row to delete.", "No Selection")
+            Return
+        End If
+
+        Dim courseId As Integer = Convert.ToInt32(dgvCourses.SelectedRows(0).Cells("course_id").Value)
+        Dim courseCode As String = Convert.ToString(dgvCourses.SelectedRows(0).Cells("course_code").Value)
+
+        If MessageBox.Show("Delete course '" & courseCode & "'? This cannot be undone.",
+                           "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
+            Return
+        End If
+
+        Dim conn As MySqlConnection = DBConnection.GetConnection()
+        Try
+            conn.Open()
+
+            Using cmd As New MySqlCommand("DELETE FROM Courses WHERE course_id = @id", conn)
+                cmd.Parameters.AddWithValue("@id", courseId)
+                cmd.ExecuteNonQuery()
+            End Using
+
+            If lblCourseStatus IsNot Nothing Then
+                lblCourseStatus.Text = "Course '" & courseCode & "' deleted."
+                lblCourseStatus.ForeColor = Color.Green
+            Else
+                MessageBox.Show("Course '" & courseCode & "' deleted.", "Success")
             End If
 
             txtCourseCode.Clear()
             txtCourseName.Clear()
+            txtCourseFee.Clear()
             If cmbCourseInstructor.Items.Count > 0 Then
                 cmbCourseInstructor.SelectedIndex = 0
             End If
@@ -765,12 +842,11 @@ Public Class AdminForm
             AttachAutoComplete(txtGradeCourse, "SELECT CONCAT(course_code, ' - ', course_name) FROM Courses")
 
         Catch ex As Exception
-            MessageBox.Show("Error creating course: " & ex.Message, "Error")
+            MessageBox.Show("Cannot delete course (it may have enrollments, grades, or payments): " & ex.Message, "Delete Error")
         Finally
             conn.Close()
         End Try
     End Sub
-
     Private Sub btnClearGradeSearch_Click(sender As Object, e As EventArgs) Handles btnClearGradeSearch.Click
         txtGradeStudent.Clear()
         txtGradeCourse.Clear()
@@ -848,6 +924,81 @@ Public Class AdminForm
                 End Using
             End Using
         Catch
+        Finally
+            conn.Close()
+        End Try
+    End Sub
+
+    Private Sub btnAddCourse_Click(sender As Object, e As EventArgs) Handles btnAddCourse.Click
+        Dim courseCode As String = txtCourseCode.Text.Trim().ToUpper()
+        Dim courseName As String = txtCourseName.Text.Trim()
+        Dim courseFee As Decimal
+
+        If courseCode = "" OrElse courseName = "" Then
+            MessageBox.Show("Enter both a course code and a course title.", "Missing Info", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return
+        End If
+
+        If Not Decimal.TryParse(txtCourseFee.Text.Trim(), courseFee) OrElse courseFee < 0D Then
+            MessageBox.Show("Enter a valid course fee (0 or greater).", "Invalid Fee", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            Return
+        End If
+
+        Dim instructorParam As Object = DBNull.Value
+        Dim selectedVal As Object = cmbCourseInstructor.SelectedValue
+        If selectedVal IsNot Nothing AndAlso Not IsDBNull(selectedVal) AndAlso Not (TypeOf selectedVal Is DataRowView) Then
+            instructorParam = Convert.ToInt32(selectedVal)
+        End If
+
+        Dim conn As MySqlConnection = DBConnection.GetConnection()
+        Try
+            conn.Open()
+
+            Using checkCmd As New MySqlCommand("SELECT COUNT(*) FROM Courses WHERE course_code = @code", conn)
+                checkCmd.Parameters.AddWithValue("@code", courseCode)
+                If Convert.ToInt32(checkCmd.ExecuteScalar()) > 0 Then
+                    MessageBox.Show("Course code '" & courseCode & "' already exists.", "Duplicate Course", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    Return
+                End If
+            End Using
+
+            Dim sql As String =
+            "INSERT INTO Courses (course_code, course_name, instructor_id, course_fee) " &
+            "VALUES (@code, @name, @instructorId, @fee)"
+
+            Using cmd As New MySqlCommand(sql, conn)
+                cmd.Parameters.AddWithValue("@code", courseCode)
+                cmd.Parameters.AddWithValue("@name", courseName)
+                cmd.Parameters.AddWithValue("@instructorId", instructorParam)
+                cmd.Parameters.AddWithValue("@fee", courseFee)
+                cmd.ExecuteNonQuery()
+            End Using
+
+            Dim msg As String = "Course '" & courseCode & " - " & courseName & "' created."
+            If lblCourseStatus IsNot Nothing Then
+                lblCourseStatus.Text = msg
+                lblCourseStatus.ForeColor = Color.Green
+            End If
+            MessageBox.Show(msg, "Success", MessageBoxButtons.OK, MessageBoxIcon.Information)
+
+            txtCourseCode.Clear()
+            txtCourseName.Clear()
+            txtCourseFee.Text = "0.00"
+            If cmbCourseInstructor.Items.Count > 0 Then
+                cmbCourseInstructor.SelectedIndex = 0
+            End If
+
+            LoadCoursesAndInstructors()
+            LoadEnrollmentLists()
+            AttachAutoComplete(txtGradeCourse, "SELECT CONCAT(course_code, ' - ', course_name) FROM Courses")
+
+        Catch ex As Exception
+            Dim errMsg As String = "Error creating course: " & ex.Message
+            If lblCourseStatus IsNot Nothing Then
+                lblCourseStatus.Text = errMsg
+                lblCourseStatus.ForeColor = Color.Red
+            End If
+            MessageBox.Show(errMsg, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
         Finally
             conn.Close()
         End Try

@@ -79,7 +79,11 @@ Public Class MainMDIParent
                 Sub() OpenChild(Of BackupForm)(Function() New BackupForm()),
                 "Create a backup and view backup history"))
             _menu.Items.Add(mnuAdmin)
-
+            If SessionManager.RoleId = 1 Then
+                mnuAdmin.DropDownItems.Add(NewItem("Payments && SOA",
+        Sub() OpenChild(Of PaymentForm)(Function() New PaymentForm()),
+        "Record student payments and view Statement of Account"))
+            End If
             mnuAdmin.DropDownItems.Add(NewItem("Bulk &Enrollment",
             Sub() OpenChild(Of BulkEnrollmentForm)(Function() New BulkEnrollmentForm()),
             "Enroll multiple students at once"))
@@ -145,10 +149,9 @@ Public Class MainMDIParent
         If role = 1 Then
             Dim mnuHelp As New ToolStripMenuItem("&Help")
             mnuHelp.DropDownItems.Add(NewItem("Open Application &Log", AddressOf OpenLogFile, "Open the application log file"))
-            mnuHelp.DropDownItems.Add(NewItem("&Simulate Error (demo)",
-                Sub() Throw New InvalidOperationException("Demo error: this is a test of the global exception handler."),
-                "Raise a test error to show the error handling"))
-            _menu.Items.Add(mnuHelp)
+            mnuTools.DropDownItems.Add(NewItem("Simulate Error",
+                Sub() Throw New ApplicationException("Simulated test exception"),
+                "Test global exception handler"))
         End If
 
         Me.Controls.Add(_menu)
@@ -204,6 +207,7 @@ Public Class MainMDIParent
 
     ' ---------- Load, settings and closing ----------
     Private Sub MainMDIParent_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        _currentInstance = Me
         _realTime = New RealTimeDataManager(Me)
         AddHandler _realTime.Refreshed, AddressOf OnRefreshed
         AddHandler AppSettings.SettingsChanged, AddressOf OnSettingsChanged
@@ -242,7 +246,11 @@ Public Class MainMDIParent
 
     Public Shared Sub ShowHint(text As String)
         If _currentInstance IsNot Nothing AndAlso Not _currentInstance.IsDisposed Then
-            _currentInstance._tsHint.Text = If(text, "")
+            If _currentInstance.IsHandleCreated AndAlso _currentInstance.InvokeRequired Then
+                _currentInstance.BeginInvoke(Sub() _currentInstance._tsHint.Text = If(text, ""))
+            Else
+                _currentInstance._tsHint.Text = If(text, "")
+            End If
         End If
     End Sub
 

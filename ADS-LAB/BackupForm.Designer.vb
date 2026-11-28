@@ -67,6 +67,24 @@ Partial Class BackupForm
         Me.btnRefreshHistory.TabIndex = 3
         Me.btnRefreshHistory.Text = "Refresh History"
         Me.btnRefreshHistory.UseVisualStyleBackColor = True
+        ' Inside InitializeComponent() — right after btnRefreshHistory setup:
+        Me.btnBrowseRestore = New System.Windows.Forms.Button()
+        Me.btnBrowseRestore.Font = New System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold)
+        Me.btnBrowseRestore.Location = New System.Drawing.Point(24, 52)
+        Me.btnBrowseRestore.Name = "btnBrowseRestore"
+        Me.btnBrowseRestore.Size = New System.Drawing.Size(175, 28)
+        Me.btnBrowseRestore.TabIndex = 8
+        Me.btnBrowseRestore.Text = "Browse && Restore .sql"
+        Me.btnBrowseRestore.UseVisualStyleBackColor = True
+
+        Me.btnRestoreSelected = New System.Windows.Forms.Button()
+        Me.btnRestoreSelected.Font = New System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold)
+        Me.btnRestoreSelected.Location = New System.Drawing.Point(208, 52)
+        Me.btnRestoreSelected.Name = "btnRestoreSelected"
+        Me.btnRestoreSelected.Size = New System.Drawing.Size(155, 28)
+        Me.btnRestoreSelected.TabIndex = 9
+        Me.btnRestoreSelected.Text = "Restore Selected"
+        Me.btnRestoreSelected.UseVisualStyleBackColor = True
         '
         'lblBackupStatus
         '
@@ -128,6 +146,9 @@ Partial Class BackupForm
         Me.Controls.Add(Me.btnCreateBackup)
         Me.Controls.Add(Me.txtBackupDescription)
         Me.Controls.Add(Me.lblDescription)
+        ' Inside Me.Controls.Add(...) block:
+        Me.Controls.Add(Me.btnRestoreSelected)
+        Me.Controls.Add(Me.btnBrowseRestore)
         Me.MinimumSize = New System.Drawing.Size(860, 480)
         Me.Name = "BackupForm"
         Me.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
@@ -148,4 +169,7 @@ Partial Class BackupForm
     Friend WithEvents dgvBackupHistory As System.Windows.Forms.DataGridView
     Friend WithEvents statusStrip1 As System.Windows.Forms.StatusStrip
     Friend WithEvents lblSession As System.Windows.Forms.ToolStripStatusLabel
+    ' At the bottom of BackupForm.Designer.vb:
+    Friend WithEvents btnBrowseRestore As System.Windows.Forms.Button
+    Friend WithEvents btnRestoreSelected As System.Windows.Forms.Button
 End Class

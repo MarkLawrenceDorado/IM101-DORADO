@@ -99,7 +99,11 @@ Partial Class AdminForm
         txtCourseName = New TextBox()
         lblCourseInstructor = New Label()
         cmbCourseInstructor = New ComboBox()
+        Me.lblCourseFee = New System.Windows.Forms.Label()
+        Me.txtCourseFee = New System.Windows.Forms.TextBox()
         btnAddCourse = New Button()
+        Me.btnUpdateCourse = New System.Windows.Forms.Button()
+        Me.btnDeleteCourse = New System.Windows.Forms.Button()
         lblCourseStatus = New Label()
         dgvCourses = New DataGridView()
         btnReportsForm = New Button()
@@ -131,6 +135,8 @@ Partial Class AdminForm
         CType(errProvider, ComponentModel.ISupportInitialize).BeginInit()
         statusStrip1.SuspendLayout()
         SuspendLayout()
+        Me.btnUpdateCourse.Visible = True
+        Me.btnDeleteCourse.Visible = True
         '
         ' errProvider
         '
@@ -930,7 +936,11 @@ Partial Class AdminForm
         CoursesTab.Controls.Add(txtCourseName)
         CoursesTab.Controls.Add(lblCourseInstructor)
         CoursesTab.Controls.Add(cmbCourseInstructor)
+        CoursesTab.Controls.Add(lblCourseFee)
+        CoursesTab.Controls.Add(txtCourseFee)
         CoursesTab.Controls.Add(btnAddCourse)
+        CoursesTab.Controls.Add(btnUpdateCourse)
+        CoursesTab.Controls.Add(btnDeleteCourse)
         CoursesTab.Controls.Add(lblCourseStatus)
         CoursesTab.Controls.Add(dgvCourses)
         CoursesTab.Location = New Point(164, 4)
@@ -990,16 +1000,53 @@ Partial Class AdminForm
         cmbCourseInstructor.Name = "cmbCourseInstructor"
         cmbCourseInstructor.Size = New Size(260, 27)
         cmbCourseInstructor.TabIndex = 5
+        '
+        'lblCourseFee
+        '
+        Me.lblCourseFee.AutoSize = True
+        Me.lblCourseFee.Location = New System.Drawing.Point(24, 146)
+        Me.lblCourseFee.Name = "lblCourseFee"
+        Me.lblCourseFee.Size = New System.Drawing.Size(72, 19)
+        Me.lblCourseFee.TabIndex = 30
+        Me.lblCourseFee.Text = "Course Fee:"
+        '
+        'txtCourseFee
+        '
+        Me.txtCourseFee.Location = New System.Drawing.Point(156, 142)
+        Me.txtCourseFee.Name = "txtCourseFee"
+        Me.txtCourseFee.Size = New System.Drawing.Size(140, 27)
+        Me.txtCourseFee.TabIndex = 31
+        Me.txtCourseFee.Text = "0.00"
         ' 
         ' btnAddCourse
         ' 
         btnAddCourse.Font = New Font("Segoe UI", 9.5F, FontStyle.Bold)
-        btnAddCourse.Location = New Point(156, 142)
+        btnAddCourse.Location = New Point(156, 182)
         btnAddCourse.Name = "btnAddCourse"
         btnAddCourse.Size = New Size(135, 32)
         btnAddCourse.TabIndex = 6
         btnAddCourse.Text = "Add Course"
         btnAddCourse.UseVisualStyleBackColor = True
+        '
+        'btnUpdateCourse
+        '
+        Me.btnUpdateCourse.Location = New System.Drawing.Point(297, 182)
+        Me.btnUpdateCourse.Name = "btnUpdateCourse"
+        Me.btnUpdateCourse.Size = New System.Drawing.Size(120, 32)
+        Me.btnUpdateCourse.TabIndex = 32
+        Me.btnUpdateCourse.Text = "Update Course"
+        Me.btnUpdateCourse.UseVisualStyleBackColor = True
+        Me.btnUpdateCourse.BringToFront()
+        '
+        'btnDeleteCourse
+        '
+        Me.btnDeleteCourse.Location = New System.Drawing.Point(427, 182)
+        Me.btnDeleteCourse.Name = "btnDeleteCourse"
+        Me.btnDeleteCourse.Size = New System.Drawing.Size(120, 32)
+        Me.btnDeleteCourse.TabIndex = 33
+        Me.btnDeleteCourse.Text = "Delete Course"
+        Me.btnDeleteCourse.UseVisualStyleBackColor = True
+        Me.btnDeleteCourse.BringToFront()
         ' 
         ' lblCourseStatus
         ' 
@@ -1017,11 +1064,11 @@ Partial Class AdminForm
         dgvCourses.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
         dgvCourses.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells
         dgvCourses.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize
-        dgvCourses.Location = New Point(24, 188)
+        dgvCourses.Location = New Point(24, 224)
         dgvCourses.Name = "dgvCourses"
         dgvCourses.ReadOnly = True
         dgvCourses.RowHeadersWidth = 45
-        dgvCourses.Size = New Size(1458, 622)
+        dgvCourses.Size = New Size(1458, 586)
         dgvCourses.TabIndex = 8
         ' 
         ' statusStrip1
@@ -1081,6 +1128,7 @@ Partial Class AdminForm
         Enrollment.ResumeLayout(False)
         Enrollment.PerformLayout()
         CoursesTab.ResumeLayout(False)
+        ' Example if added directly to AdminForm (or replace Me.Controls with your panel/tab):
         CoursesTab.PerformLayout()
         CType(errProvider, ComponentModel.ISupportInitialize).EndInit()
         statusStrip1.ResumeLayout(False)
@@ -1170,9 +1218,13 @@ Partial Class AdminForm
     Friend WithEvents txtCourseName As TextBox
     Friend WithEvents lblCourseInstructor As Label
     Friend WithEvents cmbCourseInstructor As ComboBox
+    Friend WithEvents lblCourseFee As Label
+    Friend WithEvents txtCourseFee As TextBox
     Friend WithEvents btnAddCourse As Button
     Friend WithEvents lblCourseStatus As Label
     Friend WithEvents dgvCourses As DataGridView
+    Friend WithEvents btnUpdateCourse As Button
+    Friend WithEvents btnDeleteCourse As Button
     Friend WithEvents btnReportsForm As Button
     Friend WithEvents btnAuditLog As Button
     Friend WithEvents btnBackups As Button

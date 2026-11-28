@@ -370,6 +370,10 @@ GRANT SELECT, INSERT, UPDATE ON DB_Dorado.UserSessions TO 'academic_login'@'loca
 
 FLUSH PRIVILEGES;
 
+ALTER USER 'academic_login'@'localhost' IDENTIFIED BY 'secure_password_000';
+ALTER USER 'academic_login'@'127.0.0.1' IDENTIFIED BY 'secure_password_000';
+FLUSH PRIVILEGES;
+
 DROP TRIGGER IF EXISTS tr_grades_audit_insert;
 DROP TRIGGER IF EXISTS tr_grades_audit_update;
 DROP TRIGGER IF EXISTS tr_validate_grade_before_insert;
@@ -439,3 +443,67 @@ BEGIN
 END //
 
 DELIMITER ;
+
+
+USE DB_Dorado;
+
+-- Optional: per-course fee (default 0.00 so existing courses don't break)
+ALTER TABLE Courses
+    ADD COLUMN IF NOT EXISTS course_fee DECIMAL(10,2) NOT NULL DEFAULT 0.00;
+
+-- Payments table
+CREATE TABLE IF NOT EXISTS Payments (
+    payment_id      INT PRIMARY KEY AUTO_INCREMENT,
+    student_id      INT NOT NULL,
+    course_id       INT NULL,
+    amount_paid     DECIMAL(10,2) NOT NULL,
+    payment_method  VARCHAR(50) NOT NULL DEFAULT 'Cash',
+    reference_no    VARCHAR(100) NULL,
+    payment_date    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    remarks         VARCHAR(255) NULL,
+    CONSTRAINT fk_payments_student FOREIGN KEY (student_id) REFERENCES Students(student_id),
+    CONSTRAINT fk_payments_course FOREIGN KEY (course_id) REFERENCES Courses(course_id),
+    CONSTRAINT chk_payment_positive CHECK (amount_paid > 0)
+);
+
+-- Statement of Account (SOA) summary per student
+DROP VIEW IF EXISTS StudentSOA;
+CREATE VIEW StudentSOA AS
+SELECT
+    s.student_id,
+    CONCAT(s.first_name, ' ', s.last_name) AS student_name,
+    s.email,
+    COUNT(DISTINCT e.course_id) AS enrolled_courses,
+    COALESCE(fees.total_assessed, 0.00) AS total_assessed,
+    COALESCE(paid.total_paid, 0.00) AS total_paid,
+    COALESCE(fees.total_assessed, 0.00) - COALESCE(paid.total_paid, 0.00) AS balance_due,
+    CASE
+        WHEN COALESCE(fees.total_assessed, 0.00) - COALESCE(paid.total_paid, 0.00) <= 0
+             AND COALESCE(fees.total_assessed, 0.00) > 0 THEN 'PAID'
+        WHEN COALESCE(paid.total_paid, 0.00) > 0 THEN 'PARTIAL'
+        ELSE 'UNPAID'
+    END AS payment_status
+FROM Students s
+LEFT JOIN Enrollments e ON s.student_id = e.student_id
+LEFT JOIN (
+    SELECT
+        e2.student_id,
+        SUM(COALESCE(c.course_fee, 0.00)) AS total_assessed
+    FROM Enrollments e2
+    INNER JOIN Courses c ON e2.course_id = c.course_id
+    GROUP BY e2.student_id
+) fees ON s.student_id = fees.student_id
+LEFT JOIN (
+    SELECT
+        student_id,
+        SUM(amount_paid) AS total_paid
+    FROM Payments
+    GROUP BY student_id
+) paid ON s.student_id = paid.student_id
+GROUP BY
+    s.student_id,
+    s.first_name,
+    s.last_name,
+    s.email,
+    fees.total_assessed,
+    paid.total_paid;
